@@ -1,16 +1,22 @@
 
 ###TO DO###
-#Implement Rename function
-#Implement Notes function
-#Implement Additional Sauces function
 #Implement Discount function
-#Implement Scrolling ability
-#Add Sandwich Only buttons on main menu
-#Add rest of drink buttons on main menu
 #Clean up OrderItem display and OrderSummary display
 
+
+#DONE ---Implement Additional Sauces function
 #DONE ---Complete Salad modification window
 #DONE--- Complete Kids Meal modification window
+#DONE--- Add rest of drink buttons on main menu
+#DONE ---Implement Scrolling ability
+#DONE ---Add Sandwich Only buttons on main menu
+#DONE ---Implement Notes function
+#DONE ---Implement Rename function
+
+
+
+
+
 
 
 
@@ -36,7 +42,7 @@ def initiate_main_window(root):
 
 class Order:
     def __init__(self, root):
-        self.order_name = 'Ethan'
+        self.order_name = 'Quick Sale'
 
         #will implement service type prompt later
         self.service_type = 'Dine In'
@@ -57,7 +63,25 @@ class Order:
 
 
     def rename_order(self):
-        ...
+        print(self.order_name)
+        self.rename_window = Toplevel(root)
+        self.rename_window.geometry('500x500+1920+0')
+
+
+        self.order_name_entry = Entry(self.rename_window,width=40)
+
+        self.order_name_entry.grid(row=0,column=0)
+
+        self.confirm_name = Button(self.rename_window, text='Confirm', command= lambda: self.confirm_rename())
+        self.confirm_name.grid(row=1, column=0)
+
+
+    def confirm_rename(self):
+
+        self.order_name = self.order_name_entry.get()
+        self.rename_window.destroy()
+        print(self.order_name)
+
 
 
 
@@ -93,17 +117,30 @@ class Order:
 
 
     def create_order_summary_frame(self):
-        self.order_summary_frame = LabelFrame(self.root, bg='#1e1e1e', text="Order Summary Frame", width=300,
-                                              height=925, padx=0, pady=10)
-        self.order_summary_frame.grid(column=0, row=0)
-        self.order_summary_frame.grid_propagate(False)
+        self.frame_color_bg = '#1e1e1e'
+        self.order_summary_canvas = Canvas(self.root, bg=self.frame_color_bg, width=300, height = 925)
+        self.order_summary_scrollbar = Scrollbar(self.root, orient='vertical', command= self.order_summary_canvas.yview)
+        self.order_summary_frame = Frame(self.order_summary_canvas, bg= self.frame_color_bg)
 
-        self.update_balance_due()
+
+        #Bind the inner frame to the canvas
+        self.order_summary_frame.bind('<Configure>',lambda e: self.order_summary_canvas.configure(scrollregion = self.order_summary_canvas.bbox('all')))
+
+        self.order_summary_canvas.create_window((0,0), window = self.order_summary_frame, anchor='nw')
+
+        self.order_summary_canvas.configure(yscrollcommand=self.order_summary_scrollbar.set)
+
+        #place the canvas and scrollbar in the grid
+        self.order_summary_canvas.grid(column=0, row=0)
+        self.order_summary_scrollbar.grid(column=1, row=0, sticky='ns')
+
+
 
         self.balance_due_label = Label(self.order_summary_frame, text=f'balance due:{self.balance_due:.2f}')
         self.balance_due_label.grid(column=0, row=1000)
 
 
+        self.update_balance_due()
 
 
     def item_action_window(self, order_item):
@@ -128,16 +165,23 @@ class Order:
             button.destroy()
 
         for index, item in enumerate(self.items):
-            # Check if each attribute is present and create the corresponding text
-            first_sauce_text = f"{item.first_sauce['sauce']}" if item.first_sauce else ""
-            second_sauce_text = f"{item.second_sauce['sauce']}" if item.second_sauce else ""
-            side_text = f", {item.side['side']}" if item.side else ""
-            drink_text = f", {item.drink['drink']}" if item.drink else ""
-            extra_sauces_text = ", ".join([f"{s['sauce']}" for s in item.extra_sauces]) if item.extra_sauces else ""
+            # Helper function to format item with price if price is not 0 or None
+            def format_item(name, price):
+                return f"{name}({price})" if price not in [0, None] else name
 
-            button_text = f"{item.item_name} ({item.base_price})\n{first_sauce_text}{second_sauce_text}{side_text}{drink_text}"
-            if extra_sauces_text:
-                button_text += f", {extra_sauces_text}"
+            # Check if each attribute is present and create the corresponding text
+            first_sauce_text = f"\n{format_item(item.first_sauce['sauce'], item.first_sauce['price'])}" if item.first_sauce else ""
+            second_sauce_text = f"\n{format_item(item.second_sauce['sauce'], item.second_sauce['price'])}" if item.second_sauce else ""
+            side_text = f"\n{format_item(item.side['side'], item.side['price'])}" if item.side else ""
+            drink_text = f"\n{format_item(item.drink['drink'], item.drink['price'])}" if item.drink else ""
+
+            # Generate the extra sauces text with prices
+            extra_sauces_text = "\n" + "\n".join(
+                [f"{format_item(s['sauce'], s['price'])}" for s in item.extra_sauces]) if item.extra_sauces else ""
+
+            note_text = f"\n{item.item_note}" if item.item_note else ""
+
+            button_text = f"{item.item_name} ({item.base_price})\n{first_sauce_text}{second_sauce_text}{side_text}{drink_text}{extra_sauces_text}{note_text}"
 
             # Create the button
             order_item_button = Button(self.order_summary_frame, text=button_text, anchor='w', height=0, width=50,
@@ -170,7 +214,7 @@ class OrderItem:
         self.side = {}
         self.drink = {}
         self.extra_sauces = []
-
+        self.item_note = ''
 
         self.order = menu.order
         self.menu = menu
@@ -207,6 +251,15 @@ class OrderItem:
         print(self.total_price)
         self.window.window.update_order_item_summary()
 
+    def add_item_note(self, note):
+        self.item_note = ''
+        self.item_note += note
+        print(self.item_note)
+
+
+        self.window.window.update_order_item_summary()
+
+
     def add_first_sauce(self, sauce):
         if sauce == "Hot Honey":
             price = self.menu.menu['Sauces'][sauce]
@@ -228,6 +281,19 @@ class OrderItem:
         self.calculate_total_price()
 
         self.window.window.update_order_item_summary()
+
+    def add_extra_sauce(self,sauce):
+        sauce_index = next((index for (index, d) in enumerate(self.extra_sauces) if d['sauce'] == sauce), None)
+
+        if sauce_index is not None:
+            # If the sauce is present, remove the dictionary from the list
+            self.extra_sauces.pop(sauce_index)
+        else:
+            # If the sauce is not present, add it to the list
+            self.extra_sauces.append({'sauce': sauce, 'price': self.menu.menu['Sauces'][sauce]})
+        self.calculate_total_price()
+        self.window.window.update_order_item_summary()
+
 
 
 
@@ -382,6 +448,8 @@ class ModificationWindow:
         self.get_side()
         self.side_choice_tab = self.create_upper_frame_button(self.upper_frame, "Kids Side Choice", 0,0,lambda: self.get_side())
         self.drink_choice_tab = self.create_upper_frame_button(self.upper_frame, "Kids Meal Drink Choice",0,1,lambda: self.get_drink())
+        self.add_item_note_tab = self.create_upper_frame_button(self.upper_frame, "Notes", 0, 5, lambda: self.add_order_item_note())
+
 
 
     def salad_type_upper_frame(self):
@@ -391,6 +459,7 @@ class ModificationWindow:
         self.dressing_choice_tab = self.create_upper_frame_button(self.upper_frame, 'Dressing Choice', 0, 1, lambda: self.get_dressing(self.order_item.add_first_sauce))
         if self.order_item.item_name == 'Salad':
             self.dressing_choice_tab = self.create_upper_frame_button(self.upper_frame, 'Dressing Choice', 0, 2, lambda: self.get_dressing(self.order_item.add_second_sauce))
+        self.add_item_note_tab = self.create_upper_frame_button(self.upper_frame, "Notes", 0, 5, lambda: self.add_order_item_note())
 
 
 
@@ -403,6 +472,12 @@ class ModificationWindow:
 
 
         self.drink_choice_tab = self.create_upper_frame_button(self.upper_frame, "Drink Choice?",0,3,lambda: self.get_drink())
+
+        self.extra_sauce_choice_tab = self.create_upper_frame_button(self.upper_frame, 'Extra Sauce?', 0, 4, lambda: self.get_sauce(self.order_item.add_extra_sauce))
+
+        self.add_item_note_tab = self.create_upper_frame_button(self.upper_frame, "Notes", 0, 5, lambda: self.add_order_item_note())
+
+
 
 
 
@@ -424,6 +499,18 @@ class ModificationWindow:
         self.side_choice_tab = self.create_upper_frame_button(self.upper_frame, "With Fries?", 0,2,lambda: self.get_side())
 
         self.drink_choice_tab = self.create_upper_frame_button(self.upper_frame, 'Drink Choice?',0,3,lambda: self.get_drink())
+
+        self.extra_sauce_choice_tab = self.create_upper_frame_button(self.upper_frame, 'Extra Sauce?', 0, 4, lambda: self.get_sauce(self.order_item.add_extra_sauce))
+
+        self.add_item_note_tab = self.create_upper_frame_button(self.upper_frame, "Notes", 0, 5, lambda: self.add_order_item_note())
+
+    def add_order_item_note(self):
+        self.clear_modification_frame()
+        self.note_entry = Entry(self.modification_selection_frame, width=40)
+        self.note_entry.grid(row=0, column=0)
+
+        save_note_button = Button(self.modification_selection_frame, text="Save Note", command= lambda:self.order_item.add_item_note(self.note_entry.get()))
+        save_note_button.grid(row=0, column=1)
 
     def create_upper_frame_button(self, parent, text,row, column, command):
         button = Button(parent, text=text, height=4,
@@ -603,15 +690,17 @@ class ModificationWindow:
 
     def update_order_item_summary(self):
         self.check_required_options()
-        first_sauce_text = f"{self.order_item.first_sauce['sauce']}\n" if self.order_item.first_sauce else ""
-        second_sauce_text = f"{self.order_item.second_sauce['sauce']}\n" if self.order_item.second_sauce else ""
-        side_text = f"{self.order_item.side['side']}" if self.order_item.side else ""
-        drink_text = f"{self.order_item.drink['drink']}" if self.order_item.drink else ""
-        extra_sauces_text = ", ".join([f"{s['sauce']}" for s in self.order_item.extra_sauces]) if self.order_item.extra_sauces else ""
+        first_sauce_text = f"\n{self.order_item.first_sauce['sauce']}" if self.order_item.first_sauce else ""
+        second_sauce_text = f"\n{self.order_item.second_sauce['sauce']}" if self.order_item.second_sauce else ""
+        side_text = f"\n{self.order_item.side['side']}" if self.order_item.side else ""
+        drink_text = f"\n{self.order_item.drink['drink']}" if self.order_item.drink else ""
+        extra_sauces_text = "\n" + "\n".join(
+            [f"{(s['sauce'], s['price'])}" for s in self.order_item.extra_sauces]) if self.order_item.extra_sauces else ""
+        note_text = f"\n{self.order_item.item_note}" if self.order_item.item_note else ""
 
-        label_text = f"{self.order_item.item_name} ({self.order_item.base_price})\n{first_sauce_text}{second_sauce_text}{side_text}{drink_text}"
-        if extra_sauces_text:
-            label_text += f", {extra_sauces_text}"
+
+        label_text = f"{self.order_item.item_name} ({self.order_item.base_price}){first_sauce_text}{second_sauce_text}{side_text}{drink_text}{extra_sauces_text}{note_text}"
+
 
         self.order_item_label = Label(self.order_item_summary, width=28, pady=5, anchor='w',
                                       text=f'1  {label_text}', font=tkFont.Font(size=15),
@@ -731,10 +820,10 @@ class Menu:
                 "Lemon Thyme Sandwich": 9.99,
                 "Spicy Sandwich": 9.99,
                 "Buffalo Bleu Sandwich": 9.99,
-                "Citybird Sandwich - Only": 7.49,
-                "Lemon Thyme Sandwich - Only": 7.49,
-                "Spicy Sandwich - Only": 7.49,
-                "Buffalo Bleu Sandwich - Only": 7.49,
+                "Citybird - Sandwich Only": 7.49,
+                "Lemon Thyme - Sandwich Only": 7.49,
+                "Spicy - Sandwich Only": 7.49,
+                "Buffalo Bleu - Sandwich Only": 7.49,
             },
             "Sides": {
                 "Salad": 7.99,
@@ -766,6 +855,7 @@ class Menu:
                 '8oz Citybird Vinaigrette':5.00
             },
             "Drinks": {
+                "Root Beer":2.69,
                 "Coke": 2.69,
                 "Diet Coke":2.69,
                 "Coke Zero": 2.69,
@@ -775,6 +865,7 @@ class Menu:
                 "Lemonade":2.69,
                 "Tap Water" :0.00,
                 "Bottle Water": 2.69,
+                "Smart Water": 2.69,
                 "Juice & Wikki Stix": 2.69,
                 "Milk & Wikki Stix": 2.69,
                 'Fountain Drink & Wikki Stix': 2.69,
@@ -793,15 +884,15 @@ class Menu:
         self.populate_bottom_row_frame()
 
     def navigate_to(self, window, item_name):
-        self.menu_items_frame.destroy()
+        self.menu_items_canvas.destroy()
         self.bottom_row_frame.destroy()
-        self.order.order_summary_frame.destroy()
+        self.order.order_summary_canvas.destroy()
         window(item_name, self)
 
     def kill_frames(self):
-        self.menu_items_frame.destroy()
+        self.menu_items_canvas.destroy()
         self.bottom_row_frame.destroy()
-        self.order.order_summary_frame.destroy()
+        self.order.order_summary_canvas.destroy()
 
     def initiate_main_menu_display(self):
         self.create_frames()
@@ -822,13 +913,25 @@ class Menu:
 
 
 
-        self.menu_items_frame = LabelFrame(self.root, bg=self.frame_color_bg, text="All menu items", width=1600, height=925, padx = 0, pady=10)
-        self.menu_items_frame.grid(column=1, row=0)
-        self.menu_items_frame.grid_propagate(False)
 
 
+        self.menu_items_canvas = Canvas(self.root, bg=self.frame_color_bg, width=1580, height=925)
+        self.menu_items_scrollbar = Scrollbar(self.root, orient="vertical", command=self.menu_items_canvas.yview)
+        self.menu_items_frame = Frame(self.menu_items_canvas, bg=self.frame_color_bg)
 
+        # Bind the inner frame to the canvas
+        self.menu_items_frame.bind("<Configure>", lambda e: self.menu_items_canvas.configure(
+            scrollregion=self.menu_items_canvas.bbox("all")))
 
+        # Create a window in the canvas to hold the inner frame
+        self.menu_items_canvas.create_window((0, 0), window=self.menu_items_frame, anchor="nw")
+
+        # Configure the canvas to use the scrollbar
+        self.menu_items_canvas.configure(yscrollcommand=self.menu_items_scrollbar.set)
+
+        # Place the canvas and the scrollbar in the grid
+        self.menu_items_canvas.grid(column=2, row=0, sticky='nsew')
+        self.menu_items_scrollbar.grid(column=3, row=0, sticky='ns')
 
 
 
@@ -842,7 +945,7 @@ class Menu:
 
 
         self.bottom_row_frame = LabelFrame(self.root, bg=self.frame_color_bg,text = "Random stuff", width=1920,height=175)
-        self.bottom_row_frame.grid(column=0,row=1, columnspan=2)
+        self.bottom_row_frame.grid(column=0,row=1, columnspan=4)
         self.bottom_row_frame.grid_propagate(False)
 
 
@@ -913,7 +1016,7 @@ class Menu:
         #carry out , dine in , rename
         dine_in = Button(self.menu_items_frame, text = '--DINE IN--',height= button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda: OrderItem('--DINE IN--','service', self))
         carryout = Button(self.menu_items_frame, text = '--CARRYOUT--',height= button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda:OrderItem('--CARRY OUT--','service', self))
-        rename = Button(self.menu_items_frame, text = 'Rename',height= button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda:'')
+        rename = Button(self.menu_items_frame, text = 'Rename',height= button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda: self.order.rename_order())
 
         dine_in.grid(column=0, row=0, padx = button_padx, pady = button_pady)
         carryout.grid(column=1, row=0, padx = button_padx, pady = button_pady)
@@ -925,9 +1028,20 @@ class Menu:
 
 
         #drink options
-        coke = Button(self.menu_items_frame, text= "coke", height = button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda: OrderItem('Fountain Drink', 'Drinks', self))
+        self.drinks = ("Coke", "Coke Zero","Root Beer","Diet Coke", "Grapefruit Lacroix", "Iced Tea", "Lemon Lacroix", "Lemonade", "Seasonal Tea", "Smart Water","Sprite","Tap Water")
+        for index, drink in enumerate(self.drinks):
+            drink_button = Button(self.menu_items_frame, text=drink,height = button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda d=drink: OrderItem(d,'Drinks', self))
+            drink_button.grid(column=index, row=2)
 
-        coke.grid(column=0, row=2,padx = button_padx, pady = button_pady)
+
+
+        #sandwich only options
+        self.sandwich_only = ("Citybird - \nSandwich Only", "Lemon Thyme - \nSandwich Only", "Spicy - \nSandwich Only", "Buffalo Bleu - \nSandwich Only")
+
+        for index, sandwich in enumerate(self.sandwich_only):
+            sandwich_only_button = Button(self.menu_items_frame, text=sandwich,height = button_height, width = button_width, fg= self.button_colorfg, bg= self.button_colorfg, font=self.button_font, command=lambda s=sandwich: OrderItem(s.replace("\n",""),'Sandwiches', self))
+            sandwich_only_button.grid(column=index, row=15)
+
 
 
 
