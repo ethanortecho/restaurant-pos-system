@@ -1,17 +1,5 @@
 
-###TO DO###
-#Implement Discount function
-#Clean up OrderItem display and OrderSummary display
 
-
-#DONE ---Implement Additional Sauces function
-#DONE ---Complete Salad modification window
-#DONE--- Complete Kids Meal modification window
-#DONE--- Add rest of drink buttons on main menu
-#DONE ---Implement Scrolling ability
-#DONE ---Add Sandwich Only buttons on main menu
-#DONE ---Implement Notes function
-#DONE ---Implement Rename function
 
 
 
