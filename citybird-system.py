@@ -1,19 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-#to start off tomorrow
-#review OrderItem logic - specifically looking to consolidate logic, and fix Drink logic
-
 from tkinter import *
 import tkinter.font as tkFont
 
