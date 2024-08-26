@@ -12,7 +12,7 @@ def initiate_main_window(root):
     y_offset = 0  # Start at the top of the screen
     root.configure(bg="black")
     root.title("CityBird POS System")
-    root.geometry(f"{width}x{height}+{x_offset}+{y_offset}")
+    root.geometry(f"{width}x{height}+{0}+{y_offset}")
 
 class Order:
     def __init__(self, root):
@@ -112,16 +112,16 @@ class Order:
 
 
 
-        self.name_label = Label(self.order_summary_frame, text='Quick Sale', width=26, font=tkFont.Font(size=18))
+        self.name_label = Label(self.order_summary_frame, text='Quick Sale', width=26, font=tkFont.Font(size=18), bg=self.frame_color_bg)
 
-        self.name_label.grid(row=0, column=0, padx=0)
+        self.name_label.grid(row=0, column=0, padx=0,sticky='nsew')
 
         self.order_label = Label(self.order_summary_frame, bg=self.frame_color_bg, text=self.order_name,
                                 width=26, font=tkFont.Font(size=18))
         self.name_label.grid(row=0, column=0, padx=0)
 
 
-        self.balance_due_label = Label(self.order_summary_frame, text=f'balance due:{self.balance_due:.2f}')
+        self.balance_due_label = Label(self.order_summary_frame, text=f'balance due:{self.balance_due:.2f}', bg=self.frame_color_bg)
         self.balance_due_label.grid(column=0, row=1000)
 
 
@@ -167,6 +167,7 @@ class Order:
             drink_text = f"\n{format_item(item.drink['drink'], item.drink['price'])}" if item.drink else ""
 
             # Generate the extra sauces text with prices
+
             extra_sauces_text = "\n" + "\n".join(
                 [f"{format_item(s['sauce'], s['price'])}" for s in item.extra_sauces]) if item.extra_sauces else ""
 
@@ -175,7 +176,7 @@ class Order:
             button_text = f"{item.item_name} ({item.base_price:.2f})\n{first_sauce_text}{second_sauce_text}{side_text}{drink_text}{extra_sauces_text}{note_text}"
 
             # Create the button
-            order_item_button = Button(self.order_summary_frame, text=button_text, font=('Coolvetica','15'),anchor='w', height=0, width=50,
+            order_item_button = Button(self.order_summary_frame, text=button_text, font=('Coolvetica','15'), height=0, width=50,
                                        padx=0, pady=5,
                                        command=lambda item=item: self.item_action_window(
                                            item))  # This lambda captures the current item value
@@ -499,7 +500,7 @@ class ModificationWindow:
         save_note_button.grid(row=0, column=1)
     def create_upper_frame_button(self, parent, text,row, column, command):
         button = Button(parent, text=text, height=3,
-                        width=18, fg=self.menu.button_colorfg, bg=self.menu.button_colorfg,
+                        width=10, fg=self.menu.button_colorfg, bg=self.menu.button_colorfg,
                         font=('Coolvetica',20),
                         command=command)
         button.grid(row=row, column=column,sticky='nsew')
